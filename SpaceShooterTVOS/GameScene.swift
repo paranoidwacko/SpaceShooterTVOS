@@ -27,9 +27,6 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let projectileSize = CGSize(width: 10, height: 10)
     var starSize: CGSize?
     
-    var lblMain = SKLabelNode?
-    var lblScore = SKLabelNode?
-    
     let offBlackColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
     let offWhiteColor = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
     

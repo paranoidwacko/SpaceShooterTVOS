@@ -27,11 +27,15 @@ class GameScene: SKScene {
     var enemySpeed: Double = 2.0
     var enemySpawnRate: Double = 1.0
     
+    var projectileSpeed: Double = 1.0
+    var projectileSpawnRate: Double = 0.4
+    
     override func didMove(to view: SKView) {
         self.backgroundColor = offBlackColor
         self.spawnPlayer()
         self.timerEnemySpawn()
         self.timerStarSpawn()
+        self.timerProjectileSpawn()
     }
     
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -81,7 +85,7 @@ class GameScene: SKScene {
     }
     
     func moveEnemyForward() {
-        let moveForward = SKAction.moveTo(x: -100, duration: enemySpeed)
+        let moveForward = SKAction.moveTo(x: frame.minX - 100, duration: enemySpeed)
         let destroy = SKAction.removeFromParent()
         enemy?.run(SKAction.sequence([moveForward, destroy]))
     }
@@ -113,7 +117,7 @@ class GameScene: SKScene {
     
     func moveStarForward() {
         let randomSpeed = Int(arc4random_uniform(3) + 1)
-        let moveForward = SKAction.moveTo(x: -100, duration: Double(randomSpeed))
+        let moveForward = SKAction.moveTo(x: frame.minX - 100, duration: Double(randomSpeed))
         let destroy = SKAction.removeFromParent()
         star?.run(SKAction.sequence([moveForward, destroy]))
     }
@@ -122,6 +126,31 @@ class GameScene: SKScene {
         let wait = SKAction.wait(forDuration: 0.1)
         let spawn = SKAction.run({
             self.spawnStar()
+        })
+        let sequence = SKAction.sequence([wait, spawn])
+        self.run(SKAction.repeatForever(sequence))
+    }
+    
+    func spawnProjectile() {
+        projectile = SKSpriteNode(color: offWhiteColor, size: projectileSize)
+        projectile?.position = (player?.position)!
+        
+        if let projectile = projectile {
+            self.addChild(projectile)
+        }
+        moveProjectileForward()
+    }
+    
+    func moveProjectileForward() {
+        let moveForward = SKAction.moveTo(x: 1200, duration: projectileSpeed)
+        let destroy = SKAction.removeFromParent()
+        projectile?.run(SKAction.sequence([moveForward, destroy]))
+    }
+    
+    func timerProjectileSpawn() {
+        let wait = SKAction.wait(forDuration: projectileSpawnRate)
+        let spawn = SKAction.run({
+            self.spawnProjectile()
         })
         let sequence = SKAction.sequence([wait, spawn])
         self.run(SKAction.repeatForever(sequence))

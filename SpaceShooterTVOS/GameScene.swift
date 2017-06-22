@@ -27,6 +27,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let projectileSize = CGSize(width: 10, height: 10)
     var starSize: CGSize?
     
+    var lblMain: SKLabelNode?
+    var lblScore: SKLabelNode?
+    
     let offBlackColor = UIColor(red: 0.2, green: 0.2, blue: 0.2, alpha: 1.0)
     let offWhiteColor = UIColor(red: 0.95, green: 0.95, blue: 0.95, alpha: 1.0)
     
@@ -42,11 +45,23 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     override func didMove(to view: SKView) {
         self.backgroundColor = offBlackColor
         physicsWorld.contactDelegate = self
-        
+        self.resetVariablesOnStart()
         self.spawnPlayer()
         self.timerEnemySpawn()
         self.timerStarSpawn()
         self.timerProjectileSpawn()
+        self.spawnLblMain()
+        self.spawnLblScore()
+        self.timerLblMainAlpha()
+    }
+    
+    func resetVariablesOnStart() {
+        isAlive = true
+        score = 0
+        lblMain?.alpha = 1.0
+        lblMain?.text = "Start!"
+        lblScore?.alpha = 1.0
+        lblScore?.text = "Score: \(score)"
     }
     
     override func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -75,6 +90,28 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         keepPlayerOnScreen()
     }
     
+    func spawnLblMain() {
+        lblMain = SKLabelNode(fontNamed: "Futura")
+        lblMain?.fontSize = 150
+        lblMain?.fontColor = offWhiteColor
+        lblMain?.position = CGPoint(x: self.frame.midX, y: self.frame.midY + 50)
+        lblMain?.text = "Start!"
+        if let lblMain = lblMain {
+            self.addChild(lblMain)
+        }
+    }
+    
+    func spawnLblScore() {
+        lblScore = SKLabelNode(fontNamed: "Futura")
+        lblScore?.fontSize = 60
+        lblScore?.fontColor = offWhiteColor
+        lblScore?.position = CGPoint(x: self.frame.midX, y: self.frame.minY + 50)
+        lblScore?.text = "Score: \(score)"
+        if let lblScore = lblScore {
+            self.addChild(lblScore)
+        }
+    }
+    
     func spawnPlayer() {
         player = SKSpriteNode(color: offWhiteColor, size: playerSize)
         player?.position = CGPoint(x: self.frame.minX + 100, y: self.frame.midY)
@@ -93,22 +130,24 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnEnemy() {
-        let randomY = CGFloat(Int(arc4random_uniform(500))) + self.frame.minY
-        enemy = SKSpriteNode(color: offWhiteColor, size: enemySize)
-        enemy?.position = CGPoint(x: self.frame.maxX, y: randomY)
-        enemy?.name = "enemyName"
-        
-        enemy?.physicsBody = SKPhysicsBody(rectangleOf: (enemy?.size)!)
-        enemy?.physicsBody?.affectedByGravity = false
-        enemy?.physicsBody?.allowsRotation = false
-        enemy?.physicsBody?.categoryBitMask = physicsCategory.enemy
-        enemy?.physicsBody?.contactTestBitMask = physicsCategory.projectile | physicsCategory.player
-        enemy?.physicsBody?.isDynamic = true
-        
-        if let enemy = enemy {
-            self.addChild(enemy)
+        if isAlive {
+            let randomY = CGFloat(Int(arc4random_uniform(500))) + self.frame.minY
+            enemy = SKSpriteNode(color: offWhiteColor, size: enemySize)
+            enemy?.position = CGPoint(x: self.frame.maxX, y: randomY)
+            enemy?.name = "enemyName"
+            
+            enemy?.physicsBody = SKPhysicsBody(rectangleOf: (enemy?.size)!)
+            enemy?.physicsBody?.affectedByGravity = false
+            enemy?.physicsBody?.allowsRotation = false
+            enemy?.physicsBody?.categoryBitMask = physicsCategory.enemy
+            enemy?.physicsBody?.contactTestBitMask = physicsCategory.projectile | physicsCategory.player
+            enemy?.physicsBody?.isDynamic = true
+            
+            if let enemy = enemy {
+                self.addChild(enemy)
+            }
+            moveEnemyForward()
         }
-        moveEnemyForward()
     }
     
     func moveEnemyForward() {
@@ -127,19 +166,20 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnStar() {
-        let randomWidth = Int(arc4random_uniform(3) + 1)
-        let randomHeight = Int(arc4random_uniform(3) + 1)
-        let randomY = CGFloat(Int(arc4random_uniform(500))) + self.frame.minY
-        
-        
-        starSize = CGSize(width: randomWidth, height: randomHeight)
-        star = SKSpriteNode(color: offWhiteColor, size: starSize!)
-        star?.position = CGPoint(x: self.frame.maxX, y: randomY)
-        star?.zPosition = -1
-        if let star = star {
-            self.addChild(star)
+        if isAlive {
+            let randomWidth = Int(arc4random_uniform(3) + 1)
+            let randomHeight = Int(arc4random_uniform(3) + 1)
+            let randomY = CGFloat(Int(arc4random_uniform(500))) + self.frame.minY
+            
+            starSize = CGSize(width: randomWidth, height: randomHeight)
+            star = SKSpriteNode(color: offWhiteColor, size: starSize!)
+            star?.position = CGPoint(x: self.frame.maxX, y: randomY)
+            star?.zPosition = -1
+            if let star = star {
+                self.addChild(star)
+            }
+            moveStarForward()
         }
-        moveStarForward()
     }
     
     func moveStarForward() {
@@ -159,24 +199,26 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func spawnProjectile() {
-        projectile = SKSpriteNode(color: offWhiteColor, size: projectileSize)
-        if let player = player {
-            projectile?.position.y = player.position.y
-            projectile?.position.x = player.position.x + 50
+        if isAlive {
+            projectile = SKSpriteNode(color: offWhiteColor, size: projectileSize)
+            if let player = player {
+                projectile?.position.y = player.position.y
+                projectile?.position.x = player.position.x + 50
+            }
+            projectile?.name = "projectileName"
+            
+            projectile?.physicsBody = SKPhysicsBody(rectangleOf: (projectile?.size)!)
+            projectile?.physicsBody?.affectedByGravity = false
+            projectile?.physicsBody?.allowsRotation = false
+            projectile?.physicsBody?.categoryBitMask = physicsCategory.projectile
+            projectile?.physicsBody?.contactTestBitMask = physicsCategory.enemy
+            projectile?.physicsBody?.isDynamic = true
+            
+            if let projectile = projectile {
+                self.addChild(projectile)
+            }
+            moveProjectileForward()
         }
-        projectile?.name = "projectileName"
-        
-        projectile?.physicsBody = SKPhysicsBody(rectangleOf: (projectile?.size)!)
-        projectile?.physicsBody?.affectedByGravity = false
-        projectile?.physicsBody?.allowsRotation = false
-        projectile?.physicsBody?.categoryBitMask = physicsCategory.projectile
-        projectile?.physicsBody?.contactTestBitMask = physicsCategory.enemy
-        projectile?.physicsBody?.isDynamic = true
-        
-        if let projectile = projectile {
-            self.addChild(projectile)
-        }
-        moveProjectileForward()
     }
     
     func moveProjectileForward() {
@@ -227,16 +269,44 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     }
     
     func updateScore() {
-        
+        lblScore?.text = "Score: \(score)"
     }
     
     func gameOverLogic() {
-        
+        lblMain?.text = "Game Over"
+        lblMain?.alpha = 1.0
+        lblScore?.alpha = 1.0
+        self.movePlayerOffscreen()
+        self.resetTheGame()
+    }
+    
+    func resetTheGame() {
+        let wait = SKAction.wait(forDuration: 1.0)
+        let theGameScene = GameScene(size: self.size)
+        theGameScene.scaleMode = SKSceneScaleMode.aspectFill
+        let theTransition = SKTransition.crossFade(withDuration: 0.4)
+        let changeScene = SKAction.run({
+            self.scene?.view?.presentScene(theGameScene, transition: theTransition)
+        })
+        let sequence = SKAction.sequence([wait, changeScene])
+        self.run(SKAction.repeat(sequence, count: 1))
     }
     
     func movePlayerOffscreen() {
         if !isAlive {
-            player?.position.y = self.frame.minY - 100
+            player?.alpha = 0.0
         }
     }
+    
+    func timerLblMainAlpha() {
+        let wait = SKAction.wait(forDuration: 3)
+        let changeAlpha = SKAction.run({
+            self.lblMain?.alpha = 0.0
+            self.lblScore?.alpha = 0.3
+        })
+        let sequence = SKAction.sequence([wait, changeAlpha])
+        self.run(SKAction.repeat(sequence, count: 1))
+    }
 }
+
+
